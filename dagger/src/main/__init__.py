@@ -2,13 +2,14 @@
 """
 
 import dagger
-import logging 
 import anyio
 from dagger import dag, function, object_type, Doc
 from typing import Annotated
-from dagger.log import configure_logging
 
-configure_logging(logging.DEBUG)
+# uncomment to enable debug logging:
+# import logging 
+# from dagger.log import configure_logging
+# configure_logging(logging.DEBUG)
 
 @object_type
 class BoundaryLayer:
@@ -37,27 +38,25 @@ class BoundaryLayer:
         )
 
     @function
-    async def lint(self) -> str:
+    def lint(self) -> dagger.Container:
         """Run flake8 linter"""
-        return await (
+        return (
             self
             .base()
             # stop the build if there are Python syntax errors or undefined names
             .with_exec(["sh", "-c", "flake8 boundary_layer boundary_layer_default_plugin bin test --count --select=E9,F63,F7,F82 --show-source --statistics"])
             # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
             .with_exec(["sh", "-c", "flake8 boundary_layer boundary_layer_default_plugin bin test --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics"])
-            .stdout()
         )
 
     @function
-    async def test(self) -> str:
+    def test(self) -> dagger.Container:
         """Run tests with tox"""
         # py`echo ${{ matrix.python-version }} | tr -d '.'`  yields py36, py37, etc. which is what tox needs
-        return await (
+        return (
             self.
             base()
             .with_exec(["echo", f"tox --recreate -e py`echo {self.version} | tr -d '.'` test"])
-            .stdout()
         )
 
     @function
@@ -70,8 +69,8 @@ class BoundaryLayer:
 
         async with anyio.create_task_group() as tg:
             tg.start_soon(run, self.base().with_exec(["python", "--version"]).stdout(), 0)
-            tg.start_soon(run, self.lint(), 1)
-            tg.start_soon(run, self.test(), 2)
+            tg.start_soon(run, self.lint().stdout(), 1)
+            tg.start_soon(run, self.test().stdout(), 2)
 
         return "\n".join(output)
         
