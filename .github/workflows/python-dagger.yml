@@ -1,8 +1,8 @@
 name: dagger
 on:
   push:
-    branches: [main]
-
+    branches: [master]
+git com
 jobs:
   build:
     name: build
