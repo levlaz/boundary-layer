@@ -15,12 +15,3 @@ jobs:
           module: .
           args: --env GHA --dir . ci
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-      - name: Install Dagger CLI
-        run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
-      - name: Run Dagger pipeline
-        run: dagger call --env GHA --dir . ci 
-        env:
-           DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-      - name: Stop Engine
-        run: docker stop -t 300 $(docker ps --filter name="dagger-engine-*" -q)
-        if: always()
