@@ -61,17 +61,15 @@ class BoundaryLayer:
         )
 
     @function
-    async def ci(self) -> str:
+    async def all(self) -> str:
         """Run end to end CI pipline for a specific version"""
         output = [""]*3
-
-        version_output = await self.base().with_exec(["python", "--version"]).stdout()
-        output[0] = version_output 
-
+        
         async def run(coro, index):
             output[index] = await coro
 
         async with anyio.create_task_group() as tg:
+            tg.start_soon(run, self.base().with_exec(["python", "--version"]).stdout(), 0)
             tg.start_soon(run, self.lint(), 1)
             tg.start_soon(run, self.test(), 2)
 
@@ -79,7 +77,7 @@ class BoundaryLayer:
         
 
     @function
-    async def ci_all(self) -> str:
+    async def ci(self) -> str:
         """Run end to end CI pipeline (using concurrency)."""
         python_versions = ["3.7", "3.8", "3.9"]
         output = []
@@ -90,6 +88,6 @@ class BoundaryLayer:
         async with anyio.create_task_group() as tg:
             for version in python_versions:
                 bl = BoundaryLayer(dir=self.dir, env=self.env, version=version)
-                tg.start_soon(run, bl.ci())
+                tg.start_soon(run, bl.all())
 
         return "\n".join(output)
