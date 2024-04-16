@@ -2,7 +2,7 @@ name: dagger
 on:
   push:
     branches: [master]
-git com
+
 jobs:
   build:
     name: build
