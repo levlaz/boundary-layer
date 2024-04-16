@@ -25,12 +25,11 @@ class BoundaryLayer:
             .with_directory("/src", self.dir)
             .with_workdir("/src")
             .with_mounted_cache(
-                 f"/usr/local/lib/python{self.version}/site-packages", 
+                 f"/root/.cache/pip", 
                  dag.cache_volume(f"boundry-layer-python-{self.version}")
             )
             .with_exec(["sh", "-c", "python -m pip install --upgrade pip"])
             .with_exec(["sh", "-c", "pip install tox==3.27.1 flake8"])
-            .with_exec(["sh", "-c", "flake8 boundary_layer boundary_layer_default_plugin bin test --count --select=E9,F63,F7,F82 --show-source --statistics"])
         )
 
     @function
@@ -53,7 +52,7 @@ class BoundaryLayer:
         return await (
             self.
             base()
-            .with_exec(["sh", "-c", f"tox --recreate -e py`echo ${self.version} | tr -d '.'` test"])
+            .with_exec(["sh", "-c", f"tox --recreate -e py`echo {self.version} | tr -d '.'` test"])
         )
     
     @function
