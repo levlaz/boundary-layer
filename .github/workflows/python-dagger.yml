@@ -9,6 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: dagger/dagger-for-github@v5
+        with:
+          verb: call
+          module: .
+          args: --env GHA --dir . ci
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
       - name: Install Dagger CLI
         run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
       - name: Run Dagger pipeline
