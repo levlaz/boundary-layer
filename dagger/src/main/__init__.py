@@ -10,7 +10,7 @@ from typing import Annotated
 class BoundaryLayer:
 
     dir: Annotated[dagger.Directory, Doc("Directory containing source code")]
-    version: Annotated[str, Doc("Python version for base image")] = "latest"
+    version: Annotated[str, Doc("Python version for base image")] = "3.12"
 
     @function 
     def base(
@@ -24,7 +24,7 @@ class BoundaryLayer:
             .with_directory("/src", self.dir)
             .with_workdir("/src")
             .with_mounted_cache(
-                 "/root/.cache/pip", 
+                 f"/usr/local/lib/python{self.version}/site-packages", 
                  dag.cache_volume(f"boundry-layer-python-{self.version}")
             )
             .with_exec(["sh", "-c", "python -m pip install --upgrade pip"])
@@ -44,6 +44,16 @@ class BoundaryLayer:
             .with_exec(["sh", "-c", "flake8 boundary_layer boundary_layer_default_plugin bin test --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics"])
             .stdout()
         )
+
+    @function
+    async def test(self) -> str:
+        """Run tests with tox"""
+        # py`echo ${{ matrix.python-version }} | tr -d '.'`  yields py36, py37, etc. which is what tox needs
+        return await (
+            self.
+            base()
+            .with_exec(["sh", "-c", f"tox --recreate -e py`echo ${self.version} | tr -d '.'` test"])
+        )
     
     @function
     async def ci(self) -> str:
@@ -53,12 +63,14 @@ class BoundaryLayer:
 
         for version in python_versions:
             self.version = version
-            version_output = await self.base().with_exec(["python", "--version"]).stdout()
 
+            version_output = await self.base().with_exec(["python", "--version"]).stdout()
             output += version_output 
 
             lint_output = await self.lint()
-
             output += lint_output
+
+            test_output = await self.test()
+            output += test_output
 
         return output
