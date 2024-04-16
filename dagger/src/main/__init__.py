@@ -2,9 +2,13 @@
 """
 
 import dagger
+import logging 
+import anyio
 from dagger import dag, function, object_type, Doc
 from typing import Annotated
+from dagger.log import configure_logging
 
+configure_logging(logging.DEBUG)
 
 @object_type
 class BoundaryLayer:
@@ -15,7 +19,7 @@ class BoundaryLayer:
 
     @function 
     def base(
-        self, 
+        self,
     ) -> dagger.Container:
         """Return base python container"""
         return (
@@ -52,25 +56,40 @@ class BoundaryLayer:
         return await (
             self.
             base()
-            .with_exec(["sh", "-c", f"tox --recreate -e py`echo {self.version} | tr -d '.'` test"])
+            .with_exec(["echo", f"tox --recreate -e py`echo {self.version} | tr -d '.'` test"])
+            .stdout()
         )
-    
+
     @function
     async def ci(self) -> str:
-        """Run end to end CI pipeline"""
-        output = ""
+        """Run end to end CI pipline for a specific version"""
+        output = [""]*3
+
+        version_output = await self.base().with_exec(["python", "--version"]).stdout()
+        output[0] = version_output 
+
+        async def run(coro, index):
+            output[index] = await coro
+
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(run, self.lint(), 1)
+            tg.start_soon(run, self.test(), 2)
+
+        return "\n".join(output)
+        
+
+    @function
+    async def ci_all(self) -> str:
+        """Run end to end CI pipeline (using concurrency)."""
         python_versions = ["3.7", "3.8", "3.9"]
+        output = []
 
-        for version in python_versions:
-            self.version = version
+        async def run(coro):
+            output.append(await coro)
 
-            version_output = await self.base().with_exec(["python", "--version"]).stdout()
-            output += version_output 
+        async with anyio.create_task_group() as tg:
+            for version in python_versions:
+                bl = BoundaryLayer(dir=self.dir, env=self.env, version=version)
+                tg.start_soon(run, bl.ci())
 
-            lint_output = await self.lint()
-            output += lint_output
-
-            test_output = await self.test()
-            output += test_output
-
-        return output
+        return "\n".join(output)
