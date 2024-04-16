@@ -12,7 +12,7 @@ jobs:
       - name: Install Dagger CLI
         run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
       - name: Run Dagger pipeline
-        run: dagger call --dir . ci
+        run: dagger call --env GHA --dir . ci 
         env:
            DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
       - name: Stop Engine

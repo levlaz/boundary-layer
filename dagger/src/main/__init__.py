@@ -10,6 +10,7 @@ from typing import Annotated
 class BoundaryLayer:
 
     dir: Annotated[dagger.Directory, Doc("Directory containing source code")]
+    env: Annotated[str, Doc("Environment where Dagger is running")] = "local"
     version: Annotated[str, Doc("Python version for base image")] = "3.12"
 
     @function 
