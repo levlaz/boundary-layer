@@ -1,9 +1,14 @@
 [project]
 name = "main"
 version = "0.0.0"
-dependencies = []
+dependencies = [
+    "dagger-io",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+dagger-io = { path = "sdk", editable = true }
 
