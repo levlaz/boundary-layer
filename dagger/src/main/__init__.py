@@ -3,7 +3,7 @@
 
 import dagger
 import anyio
-from dagger import dag, function, object_type, Doc
+from dagger import dag, function, object_type, Doc, DefaultPath
 from typing import Annotated
 
 # uncomment to enable debug logging:
@@ -14,7 +14,7 @@ from typing import Annotated
 @object_type
 class BoundaryLayer:
 
-    dir: Annotated[dagger.Directory, Doc("Directory containing source code")]
+    dir: Annotated[dagger.Directory, Doc("Directory containing source code"), DefaultPath("/")]
     env: Annotated[str, Doc("Environment where Dagger is running")] = "local"
     version: Annotated[str, Doc("Python version for base image")] = "3.12"
 
