@@ -7,7 +7,7 @@ from dagger import dag, function, object_type, Doc, DefaultPath
 from typing import Annotated
 
 # uncomment to enable debug logging:
-# import logging 
+# import logging
 # from dagger.log import configure_logging
 # configure_logging(logging.DEBUG)
 
@@ -18,7 +18,7 @@ class BoundaryLayer:
     env: Annotated[str, Doc("Environment where Dagger is running")] = "local"
     version: Annotated[str, Doc("Python version for base image")] = "3.12"
 
-    @function 
+    @function
     def base(
         self,
     ) -> dagger.Container:
@@ -30,7 +30,7 @@ class BoundaryLayer:
             .with_directory("/src", self.dir)
             .with_workdir("/src")
             .with_mounted_cache(
-                 f"/root/.cache/pip", 
+                 f"/root/.cache/pip",
                  dag.cache_volume(f"boundry-layer-python-{self.version}")
             )
             .with_exec(["sh", "-c", "python -m pip install --upgrade pip"])
@@ -63,7 +63,7 @@ class BoundaryLayer:
     async def all(self) -> str:
         """Run end to end CI pipline for a specific version"""
         output = [""]*3
-        
+
         async def run(coro, index):
             output[index] = await coro
 
@@ -73,7 +73,6 @@ class BoundaryLayer:
             tg.start_soon(run, self.test().stdout(), 2)
 
         return "\n".join(output)
-        
 
     @function
     async def ci(self) -> str:
